@@ -143,23 +143,40 @@ jobs:
       - name: ESLint
         run: npm run lint
   
+# JavaScript форматирование
   javascript-format:
-    name: JavaScript Formatting
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
       
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       
-      - name: Prettier check
-        run: npm run format:check
-  
+      - name: Check formatting with Prettier
+        run: |
+          echo "Проверка форматирования с Prettier..."
+          npm run format:check
+      
+      - name: Auto-format (на ветках feature)
+        if: failure() && github.ref != 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "🔧 Автоматическое форматирование JavaScript..."
+          npm run format
+          
+      - name: Show formatting differences
+        if: failure()
+        run: |
+          echo "Найдены проблемы с форматированием!"
+          echo "Запустите: npm run format"
+    
   # ================== Tests ==================
   
   tests:

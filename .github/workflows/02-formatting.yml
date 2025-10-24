@@ -44,8 +44,7 @@ jobs:
           echo "🔧 Автоматическое форматирование..."
           black app/ tests/
           isort app/ tests/
-  
-  # JavaScript форматирование
+ # JavaScript форматирование
   javascript-format:
     runs-on: ubuntu-latest
     
@@ -59,13 +58,19 @@ jobs:
           node-version: '20'
       
       - name: Install dependencies
-        run: npm install
+        run: npm ci
       
       - name: Check formatting with Prettier
         run: |
           echo "Проверка форматирования с Prettier..."
           npm run format:check
       
+      - name: Auto-format (на ветках feature)
+        if: failure() && github.ref != 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "🔧 Автоматическое форматирование JavaScript..."
+          npm run format
+          
       - name: Show formatting differences
         if: failure()
         run: |
