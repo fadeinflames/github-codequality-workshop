@@ -1,212 +1,220 @@
 """
-Тесты для REST API
+User Service - демонстрация статического анализа кода
 """
-import pytest
-import json
+from typing import List, Optional, Dict, Any
+from datetime import datetime
 import re
 
 
-@pytest.fixture
-def client():
-    """Фикстура для тестового клиента"""
-    app.config['TESTING'] = True
-    
-    with app.test_client() as client:
-        # Очищаем репозиторий перед каждым тестом
-        from app.api import repository
-        repository._users.clear()
-        repository._next_id = 1
-        
-        yield client
+class ValidationError(Exception):
+    """Ошибка валидации данных"""
+    pass
 
 
-class TestHealthEndpoint:
-    """Тесты для health check"""
+class User:
+    """Класс пользователя с валидацией"""
     
-    def test_health_check(self, client):
-        """Тест health endpoint"""
-        response = client.get('/health')
-        assert response.status_code == 200
+    def __init__(
+        self,
+        user_id: int,
+        username: str,
+        email: str,
+        created_at: Optional[datetime] = None
+    ) -> None:
+        """
+        Инициализация пользователя
         
-        data = json.loads(response.data)
-        assert data['status'] == 'healthy'
-        assert data['service'] == 'user-api'
-        assert 'users_count' in data
+        Args:
+            user_id: Уникальный идентификатор
+            username: Имя пользователя
+            email: Email адрес
+            created_at: Дата создания
+            
+        Raises:
+            ValidationError: Если данные невалидны
+        """
+        self.user_id = user_id
+        self.username = username
+        self.email = email
+        self.created_at = created_at or datetime.now()
+        
+        self._validate()
+    
+    def _validate(self) -> None:
+        """Валидация данных пользователя"""
+        if not isinstance(self.user_id, int) or self.user_id <= 0:
+            raise ValidationError("user_id должен быть положительным числом")
+        
+        if not self.username or len(self.username) < 3:
+            raise ValidationError("username должен содержать минимум 3 символа")
+        
+        if not self._is_valid_email(self.email):
+            raise ValidationError("Некорректный email адрес")
+    
+    @staticmethod
+    def _is_valid_email(email: str) -> bool:
+        """
+        Проверка валидности email
+        
+        Args:
+            email: Email для проверки
+            
+        Returns:
+            True если email валиден
+        """
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(pattern, email))
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Преобразование в словарь
+        
+        Returns:
+            Словарь с данными пользователя
+        """
+        return {
+            'user_id': self.user_id,
+            'username': self.username,
+            'email': self.email,
+            'created_at': self.created_at.isoformat()
+        }
+    
+    def __repr__(self) -> str:
+        """Строковое представление"""
+        return f"User(id={self.user_id}, username='{self.username}')"
 
 
-class TestUsersEndpoints:
-    """Тесты для users endpoints"""
+class UserRepository:
+    """Репозиторий для работы с пользователями"""
     
-    def test_get_empty_users_list(self, client):
-        """Тест получения пустого списка пользователей"""
-        response = client.get('/users')
-        assert response.status_code == 200
+    def __init__(self) -> None:
+        """Инициализация репозитория"""
+        self._users: Dict[int, User] = {}
+        self._next_id: int = 1
+    
+    def create(self, username: str, email: str) -> User:
+        """
+        Создание нового пользователя
         
-        data = json.loads(response.data)
-        assert data['users'] == []
-        assert data['count'] == 0
-    
-    def test_create_user(self, client):
-        """Тест создания пользователя"""
-        response = client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'testuser',
-                'email': 'test@example.com'
-            }),
-            content_type='application/json'
+        Args:
+            username: Имя пользователя
+            email: Email адрес
+            
+        Returns:
+            Созданный пользователь
+            
+        Raises:
+            ValidationError: Если пользователь с таким email уже существует
+        """
+        # Проверка на существующий email
+        if self.find_by_email(email):
+            raise ValidationError(f"Пользователь с email {email} уже существует")
+        
+        user = User(
+            user_id=self._next_id,
+            username=username,
+            email=email
         )
         
-        assert response.status_code == 201
+        self._users[user.user_id] = user
+        self._next_id += 1
         
-        data = json.loads(response.data)
-        assert data['username'] == 'testuser'
-        assert data['email'] == 'test@example.com'
-        assert 'user_id' in data
+        return user
     
-    def test_create_user_missing_fields(self, client):
-        """Тест создания пользователя без обязательных полей"""
-        response = client.post(
-            '/users',
-            data=json.dumps({'username': 'test'}),
-            content_type='application/json'
+    def get(self, user_id: int) -> Optional[User]:
+        """
+        Получение пользователя по ID
+        
+        Args:
+            user_id: ID пользователя
+            
+        Returns:
+            Пользователь или None
+        """
+        return self._users.get(user_id)
+    
+    def find_by_email(self, email: str) -> Optional[User]:
+        """
+        Поиск пользователя по email
+        
+        Args:
+            email: Email для поиска
+            
+        Returns:
+            Пользователь или None
+        """
+        for user in self._users.values():
+            if user.email == email:
+                return user
+        return None
+    
+    def get_all(self) -> List[User]:
+        """
+        Получение всех пользователей
+        
+        Returns:
+            Список всех пользователей
+        """
+        return list(self._users.values())
+    
+    def update(self, user_id: int, username: Optional[str] = None,
+               email: Optional[str] = None) -> Optional[User]:
+        """
+        Обновление данных пользователя
+        
+        Args:
+            user_id: ID пользователя
+            username: Новое имя (опционально)
+            email: Новый email (опционально)
+            
+        Returns:
+            Обновленный пользователь или None
+            
+        Raises:
+            ValidationError: Если данные невалидны
+        """
+        user = self.get(user_id)
+        if not user:
+            return None
+        
+        # Проверка на уникальность email
+        if email and email != user.email:
+            if self.find_by_email(email):
+                raise ValidationError(
+                    f"Пользователь с email {email} уже существует"
+                )
+        
+        # Создаем нового пользователя с обновленными данными
+        updated_user = User(
+            user_id=user.user_id,
+            username=username or user.username,
+            email=email or user.email,
+            created_at=user.created_at
         )
         
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert 'error' in data
+        self._users[user_id] = updated_user
+        return updated_user
     
-    def test_create_user_invalid_email(self, client):
-        """Тест создания пользователя с невалидным email"""
-        response = client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'testuser',
-                'email': 'invalid-email'
-            }),
-            content_type='application/json'
-        )
+    def delete(self, user_id: int) -> bool:
+        """
+        Удаление пользователя
         
-        assert response.status_code == 400
+        Args:
+            user_id: ID пользователя
+            
+        Returns:
+            True если пользователь был удален
+        """
+        if user_id in self._users:
+            del self._users[user_id]
+            return True
+        return False
     
-    def test_get_user(self, client):
-        """Тест получения пользователя по ID"""
-        # Создаем пользователя
-        create_response = client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'testuser',
-                'email': 'test@example.com'
-            }),
-            content_type='application/json'
-        )
-        user_data = json.loads(create_response.data)
-        user_id = user_data['user_id']
+    def count(self) -> int:
+        """
+        Подсчет количества пользователей
         
-        # Получаем пользователя
-        response = client.get(f'/users/{user_id}')
-        assert response.status_code == 200
-        
-        data = json.loads(response.data)
-        assert data['user_id'] == user_id
-        assert data['username'] == 'testuser'
-    
-    def test_get_nonexistent_user(self, client):
-        """Тест получения несуществующего пользователя"""
-        response = client.get('/users/999')
-        assert response.status_code == 404
-    
-    def test_update_user(self, client):
-        """Тест обновления пользователя"""
-        # Создаем пользователя
-        create_response = client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'oldname',
-                'email': 'old@example.com'
-            }),
-            content_type='application/json'
-        )
-        user_data = json.loads(create_response.data)
-        user_id = user_data['user_id']
-        
-        # Обновляем пользователя
-        response = client.put(
-            f'/users/{user_id}',
-            data=json.dumps({
-                'username': 'newname',
-                'email': 'new@example.com'
-            }),
-            content_type='application/json'
-        )
-        
-        assert response.status_code == 200
-        
-        data = json.loads(response.data)
-        assert data['username'] == 'newname'
-        assert data['email'] == 'new@example.com'
-    
-    def test_update_nonexistent_user(self, client):
-        """Тест обновления несуществующего пользователя"""
-        response = client.put(
-            '/users/999',
-            data=json.dumps({'username': 'test'}),
-            content_type='application/json'
-        )
-        
-        assert response.status_code == 404
-    
-    def test_delete_user(self, client):
-        """Тест удаления пользователя"""
-        # Создаем пользователя
-        create_response = client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'testuser',
-                'email': 'test@example.com'
-            }),
-            content_type='application/json'
-        )
-        user_data = json.loads(create_response.data)
-        user_id = user_data['user_id']
-        
-        # Удаляем пользователя
-        response = client.delete(f'/users/{user_id}')
-        assert response.status_code == 200
-        
-        # Проверяем что пользователь удален
-        get_response = client.get(f'/users/{user_id}')
-        assert get_response.status_code == 404
-    
-    def test_delete_nonexistent_user(self, client):
-        """Тест удаления несуществующего пользователя"""
-        response = client.delete('/users/999')
-        assert response.status_code == 404
-    
-    def test_get_all_users(self, client):
-        """Тест получения всех пользователей"""
-        # Создаем несколько пользователей
-        client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'user1',
-                'email': 'user1@example.com'
-            }),
-            content_type='application/json'
-        )
-        client.post(
-            '/users',
-            data=json.dumps({
-                'username': 'user2',
-                'email': 'user2@example.com'
-            }),
-            content_type='application/json'
-        )
-        
-        # Получаем всех пользователей
-        response = client.get('/users')
-        assert response.status_code == 200
-        
-        data = json.loads(response.data)
-        assert data['count'] == 2
-        assert len(data['users']) == 2
+        Returns:
+            Количество пользователей
+        """
+        return len(self._users)
