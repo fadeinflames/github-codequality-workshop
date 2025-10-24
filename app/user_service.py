@@ -3,7 +3,6 @@
 """
 import pytest
 import json
-from app.api import app
 
 
 @pytest.fixture
