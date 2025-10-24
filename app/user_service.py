@@ -13,7 +13,8 @@ def client():
     with app.test_client() as client:
         # Очищаем репозиторий перед каждым тестом
         from app.api import repository
-        repository.clear()
+        repository._users.clear()
+        repository._next_id = 1
         
         yield client
 
