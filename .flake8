@@ -4,11 +4,16 @@ max-line-length = 88
 
 # Игнорируемые ошибки
 ignore =
-    E203,  # whitespace before ':' (конфликт с black)
-    E501,  # line too long (обрабатывается black)
-    W503,  # line break before binary operator (устаревшее правило)
-    D100,  # Missing docstring in public module
-    D104,  # Missing docstring in public package
+    E203,  
+    # whitespace before ':' (конфликт с black)
+    E501,  
+    # line too long (обрабатывается black)
+    W503,  
+    # line break before binary operator (устаревшее правило)
+    D100,  
+    # Missing docstring in public module
+    D104,  
+    # Missing docstring in public package
 
 # Исключенные директории
 exclude =
