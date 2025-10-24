@@ -219,18 +219,18 @@ jobs:
       
       - name: Quality summary
         run: |
-          echo "✅ Все проверки качества кода пройдены!"
+          echo "Все проверки качества кода пройдены!"
           echo ""
-          echo "📊 Результаты:"
-          echo "  - Python Linting: ✅"
-          echo "  - Python Formatting: ✅"
-          echo "  - Type Checking: ✅"
-          echo "  - Security Scan: ✅"
-          echo "  - JavaScript Linting: ✅"
-          echo "  - JavaScript Formatting: ✅"
-          echo "  - Tests & Coverage: ✅"
+          echo "Результаты:"
+          echo "  - Python Linting: PASSED"
+          echo "  - Python Formatting: PASSED"
+          echo "  - Type Checking: PASSED"
+          echo "  - Security Scan: PASSED"
+          echo "  - JavaScript Linting: PASSED"
+          echo "  - JavaScript Formatting: PASSED"
+          echo "  - Tests & Coverage: PASSED"
           echo ""
-          echo "📦 Артефакты доступны для скачивания"
+          echo "Артефакты доступны для скачивания"
       
       - name: Create quality badge data
         run: |

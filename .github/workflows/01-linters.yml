@@ -29,13 +29,13 @@ jobs:
       
       - name: Run Flake8
         run: |
-          echo "🔍 Запуск Flake8..."
+          echo "Запуск Flake8..."
           flake8 app/ tests/ --statistics
         continue-on-error: true
       
       - name: Run Pylint
         run: |
-          echo "🔍 Запуск Pylint..."
+          echo "Запуск Pylint..."
           pylint app/ --rcfile=.pylintrc
         continue-on-error: true
   
@@ -58,6 +58,6 @@ jobs:
       
       - name: Run ESLint
         run: |
-          echo "🔍 Запуск ESLint..."
+          echo "Запуск ESLint..."
           npm run lint
         continue-on-error: true

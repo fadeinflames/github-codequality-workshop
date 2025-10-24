@@ -107,7 +107,7 @@ jobs:
           script: |
             const fs = require('fs');
             const coverage = fs.readFileSync('reports/coverage-summary.txt', 'utf8');
-            const body = `## 📊 Coverage Report\n\n\`\`\`\n${coverage}\n\`\`\``;
+            const body = `## Coverage Report\n\n\`\`\`\n${coverage}\n\`\`\``;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -128,25 +128,25 @@ jobs:
       
       - name: List downloaded artifacts
         run: |
-          echo "📦 Скачанные артефакты:"
+          echo "Скачанные артефакты:"
           ls -R
       
       - name: Create summary report
         run: |
           cat > reports-summary.md << 'EOF'
-          # 📊 Отчеты о качестве кода
+          # Отчеты о качестве кода
           
           ## Доступные отчеты:
           
           ### Code Quality
-          - 🔍 Flake8: Проверка стиля кода
-          - 📋 Pylint: Статический анализ
-          - 🔒 Bandit: Проверка безопасности
-          - 🎯 mypy: Проверка типов
+          - Flake8: Проверка стиля кода
+          - Pylint: Статический анализ
+          - Bandit: Проверка безопасности
+          - mypy: Проверка типов
           
           ### Testing
-          - ✅ Pytest: Результаты тестов
-          - 📈 Coverage: Покрытие кода тестами
+          - Pytest: Результаты тестов
+          - Coverage: Покрытие кода тестами
           
           Все отчеты доступны в артефактах этого workflow run.
           EOF

@@ -1,6 +1,6 @@
 # Code Quality Workshop - Шпаргалка
 
-## 🐍 Python - Линтеры
+## Python - Линтеры
 
 ### Flake8
 
@@ -66,7 +66,7 @@ pylint app/ --disable=C0103,R0903
 
 ---
 
-## 🎨 Python - Форматтеры
+## Python - Форматтеры
 
 ### Black
 
@@ -127,7 +127,7 @@ multi_line_output = 3
 
 ---
 
-## 🔍 Python - Type Checking
+## Python - Type Checking
 
 ### mypy
 
@@ -166,7 +166,7 @@ disallow_untyped_defs = True
 
 ---
 
-## 🔒 Python - Security
+## Python - Security
 
 ### Bandit
 
@@ -200,7 +200,7 @@ bandit -r app/ -c bandit.yml
 
 ---
 
-## 📦 JavaScript - Линтеры
+## JavaScript - Линтеры
 
 ### ESLint
 
@@ -273,7 +273,7 @@ prettier --list-different frontend/**/*.js
 
 ---
 
-## 🧪 Testing & Coverage
+## Testing & Coverage
 
 ### pytest
 
@@ -336,7 +336,7 @@ coverage report --fail-under=80
 
 ---
 
-## 🐳 Docker
+## Docker
 
 ```bash
 # Сборка образа
@@ -366,7 +366,7 @@ docker rmi code-quality-workshop
 
 ---
 
-## 🔄 GitHub Actions - Локальная проверка
+## GitHub Actions - Локальная проверка
 
 ### act (запуск workflows локально)
 
@@ -396,7 +396,7 @@ act -n
 
 ---
 
-## 🔧 Pre-commit Hooks
+## Pre-commit Hooks
 
 ```bash
 # Установка pre-commit
@@ -442,7 +442,7 @@ repos:
 
 ---
 
-## 🎯 Комплексные команды
+## Комплексные команды
 
 ### Полная проверка Python
 
@@ -450,25 +450,25 @@ repos:
 #!/bin/bash
 # check-python.sh
 
-echo "🔍 Running Flake8..."
+echo "Running Flake8..."
 flake8 app/ tests/ || true
 
-echo "📋 Running Pylint..."
+echo "Running Pylint..."
 pylint app/ || true
 
-echo "🎨 Checking Black formatting..."
+echo "Checking Black formatting..."
 black --check app/ tests/ || true
 
-echo "📦 Checking isort..."
+echo "Checking isort..."
 isort --check-only app/ tests/ || true
 
-echo "🔍 Running mypy..."
+echo "Running mypy..."
 mypy app/ || true
 
-echo "🔒 Running Bandit..."
+echo "Running Bandit..."
 bandit -r app/ || true
 
-echo "✅ All checks completed!"
+echo "All checks completed!"
 ```
 
 ### Полная проверка JavaScript
@@ -477,13 +477,13 @@ echo "✅ All checks completed!"
 #!/bin/bash
 # check-javascript.sh
 
-echo "🔍 Running ESLint..."
+echo "Running ESLint..."
 npm run lint || true
 
-echo "🎨 Checking Prettier..."
+echo "Checking Prettier..."
 npm run format:check || true
 
-echo "✅ All checks completed!"
+echo "All checks completed!"
 ```
 
 ### Автоматическое исправление
@@ -492,20 +492,20 @@ echo "✅ All checks completed!"
 #!/bin/bash
 # auto-fix.sh
 
-echo "🔧 Auto-fixing Python..."
+echo "Auto-fixing Python..."
 black app/ tests/
 isort app/ tests/
 
-echo "🔧 Auto-fixing JavaScript..."
+echo "Auto-fixing JavaScript..."
 npm run format
 npm run lint:fix
 
-echo "✅ Auto-fix completed!"
+echo "Auto-fix completed!"
 ```
 
 ---
 
-## 📊 Генерация всех отчетов
+## Генерация всех отчетов
 
 ```bash
 #!/bin/bash
@@ -513,7 +513,7 @@ echo "✅ Auto-fix completed!"
 
 mkdir -p reports/{flake8,pylint,mypy,bandit,coverage,pytest}
 
-echo "📊 Generating reports..."
+echo "Generating reports..."
 
 # Flake8
 flake8 app/ tests/ --format=html --htmldir=reports/flake8 || true
@@ -534,14 +534,14 @@ pytest tests/ --cov=app --cov-report=html:reports/coverage \
   --cov-report=xml:reports/coverage/coverage.xml \
   --html=reports/pytest/report.html --self-contained-html
 
-echo "✅ All reports generated in ./reports/"
-echo "📂 Open reports/coverage/index.html for coverage"
-echo "📂 Open reports/pytest/report.html for test results"
+echo "All reports generated in ./reports/"
+echo "Open reports/coverage/index.html for coverage"
+echo "Open reports/pytest/report.html for test results"
 ```
 
 ---
 
-## 🚀 CI/CD - GitHub Actions
+## CI/CD - GitHub Actions
 
 ### Базовый workflow
 
@@ -604,7 +604,7 @@ jobs:
 
 ---
 
-## 🔑 Полезные алиасы
+## Полезные алиасы
 
 Добавьте в `.bashrc` или `.zshrc`:
 
@@ -643,7 +643,7 @@ alias open-cov="open htmlcov/index.html"  # macOS
 
 ---
 
-## 📋 Чек-лист Code Review
+## Чек-лист Code Review
 
 ```markdown
 ### Code Quality Checklist
@@ -679,7 +679,7 @@ alias open-cov="open htmlcov/index.html"  # macOS
 
 ---
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Конфликт между Black и Flake8
 
@@ -718,7 +718,7 @@ pytest tests/ -m "not slow"
 
 ---
 
-## 📚 Полезные ссылки
+## Полезные ссылки
 
 - **Flake8:** https://flake8.pycqa.org/
 - **Pylint:** https://pylint.pycqa.org/
@@ -733,7 +733,7 @@ pytest tests/ -m "not slow"
 
 ---
 
-## 🎯 Quick Start
+## Quick Start
 
 ```bash
 # 1. Установка всех инструментов
@@ -764,4 +764,4 @@ open htmlcov/index.html
 
 ---
 
-**Сохраните эту шпаргалку - она пригодится! 🚀**
+**Сохраните эту шпаргалку - она пригодится!**

@@ -73,17 +73,17 @@ jobs:
         run: |
           if ! black --check app/ tests/ 2>/dev/null || ! isort --check-only app/ tests/ 2>/dev/null; then
             echo "needs_format=true" >> $GITHUB_OUTPUT
-            echo "⚠️ Код требует форматирования"
+            echo "WARNING: Код требует форматирования"
           else
             echo "needs_format=false" >> $GITHUB_OUTPUT
-            echo "✅ Код уже отформатирован"
+            echo "OK: Код уже отформатирован"
           fi
         continue-on-error: true
       
       - name: Auto-format code
         if: steps.check.outputs.needs_format == 'true'
         run: |
-          echo "🎨 Форматирую код..."
+          echo "Форматирую код..."
           black app/ tests/
           isort app/ tests/
       
@@ -97,9 +97,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "style: автоматическое форматирование кода"
-          title: "🤖 Автоформатирование: ${{ github.ref_name }}"
+          title: "Автоформатирование: ${{ github.ref_name }}"
           body: |
-            ## 🎨 Автоматическое форматирование кода
+            ## Автоматическое форматирование кода
             
             Этот PR создан автоматически для ветки `${{ github.ref_name }}`.
             
@@ -108,9 +108,9 @@ jobs:
             - **isort** - сортировка импортов
             
             ### Действия:
-            1. ✅ Просмотрите изменения
-            2. ✅ Смержите если всё в порядке
-            3. ❌ Закройте если нужны ручные правки
+            1. Просмотрите изменения
+            2. Смержите если всё в порядке
+            3. Закройте если нужны ручные правки
             
             ---
             <details>
@@ -137,13 +137,14 @@ jobs:
         with:
           commit_message: "style: auto-format code [skip ci]"
           file_pattern: "*.py"
+          add_options: '-A'
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
       
       - name: Report formatting status
         if: steps.check.outputs.needs_format == 'false'
         run: |
-          echo "✅ Код уже правильно отформатирован"
+          echo "OK: Код уже правильно отформатирован"
           echo "Проверки пройдены успешно!"
   
   python-types:
@@ -204,9 +205,13 @@ jobs:
   javascript-lint:
     name: JavaScript Linting
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       
       - uses: actions/setup-node@v4
         with:
@@ -224,6 +229,9 @@ jobs:
         with:
           commit_message: "style: auto-fix ESLint issues [skip ci]"
           file_pattern: "*.js *.jsx *.ts *.tsx"
+          add_options: '-A'
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
   
   javascript-format:
     name: JavaScript Formatting
@@ -246,7 +254,7 @@ jobs:
           if [ -f package.json ]; then
             npm install
           else
-            echo "⚠️ package.json не найден, пропускаем"
+            echo "WARNING: package.json не найден, пропускаем"
             exit 0
           fi
       
@@ -256,9 +264,9 @@ jobs:
       - name: Run Prettier
         run: |
           if npm run format:write --silent 2>/dev/null; then
-            echo "✅ Используем npm скрипт format:write"
+            echo "OK: Используем npm скрипт format:write"
           else
-            echo "🔧 Запускаю Prettier напрямую..."
+            echo "INFO: Запускаю Prettier напрямую..."
             npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}" || true
           fi
         continue-on-error: true
@@ -269,6 +277,9 @@ jobs:
         with:
           commit_message: "style: format code with prettier [skip ci]"
           file_pattern: "*.js *.jsx *.ts *.tsx *.json *.css *.md"
+          add_options: '-A'
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
   
   # ================== Tests ==================
   
@@ -331,22 +342,22 @@ jobs:
       
       - name: Quality summary
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🎉 ВСЕ ПРОВЕРКИ КАЧЕСТВА КОДА ПРОЙДЕНЫ!"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "=========================================="
+          echo "ВСЕ ПРОВЕРКИ КАЧЕСТВА КОДА ПРОЙДЕНЫ!"
+          echo "=========================================="
           echo ""
-          echo "📊 Результаты:"
-          echo "  ✅ Python Linting"
-          echo "  ✅ Python Formatting (с автоисправлением)"
-          echo "  ✅ Type Checking"
-          echo "  ✅ Security Scan"
-          echo "  ✅ JavaScript Linting (с автоисправлением)"
-          echo "  ✅ JavaScript Formatting (с автоисправлением)"
-          echo "  ✅ Tests & Coverage"
+          echo "Результаты:"
+          echo "  [PASS] Python Linting"
+          echo "  [PASS] Python Formatting (с автоисправлением)"
+          echo "  [PASS] Type Checking"
+          echo "  [PASS] Security Scan"
+          echo "  [PASS] JavaScript Linting (с автоисправлением)"
+          echo "  [PASS] JavaScript Formatting (с автоисправлением)"
+          echo "  [PASS] Tests & Coverage"
           echo ""
-          echo "📦 Все артефакты доступны для скачивания"
+          echo "Все артефакты доступны для скачивания"
           echo ""
-          echo "💡 Автоисправления применены где необходимо"
+          echo "Автоисправления применены где необходимо"
       
       - name: Create quality badge
         run: |
