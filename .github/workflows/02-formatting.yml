@@ -70,5 +70,8 @@ jobs:
       - name: Show formatting differences
         if: failure()
         run: |
-          echo "❌ Найдены проблемы с форматированием!"
-          echo "Запустите: npm run format"
+          echo "::error title=Форматирование кода::Найдены проблемы с форматированием кода"
+          echo "::warning::Для исправления выполните: npm run format"
+          echo ""
+          echo "Файлы с проблемами:"
+          npx prettier --check "**/*.{js,jsx,ts,tsx,json,css,md}" || true
