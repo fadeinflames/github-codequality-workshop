@@ -339,24 +339,24 @@ jobs:
 
             [Download HTML reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
             `;
-                        
-                        await github.rest.issues.createComment({
-                        owner: context.repo.owner,
-                        repo: context.repo.repo,
-                        issue_number: context.issue.number,
-                        body: body
-                        });
-                
-                - name: Check coverage threshold
-                    run: |
-                    coverage report --fail-under=80
-                
-                - name: Upload test reports
-                    uses: actions/upload-artifact@v4
-                    with:
-                    name: test-reports
-                    path: reports/
-  
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+      
+      - name: Check coverage threshold
+        run: |
+          coverage report --fail-under=80
+      
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: reports/
+
   # ================== Quality Gate ==================
   
   quality-gate:
