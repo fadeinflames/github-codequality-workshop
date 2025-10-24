@@ -3,14 +3,20 @@
 """
 import pytest
 import json
-from app.api import app
+from app.api import app, repository  # <-- Импортируем и app, и repository!
 
-@pytest.fixture
+
+@pytest.fixture(autouse=False)  # autouse=False - вызывается только когда явно указан
 def client():
     """Фикстура для тестового клиента"""
+    # Очищаем репозиторий ПЕРЕД созданием клиента
+    repository._users.clear()
+    repository._next_id = 1
+    
     app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
+    
+    with app.test_client() as test_client:
+        yield test_client
 
 
 class TestHealthEndpoint:
