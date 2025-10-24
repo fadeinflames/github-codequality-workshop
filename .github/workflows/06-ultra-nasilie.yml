@@ -286,7 +286,10 @@ jobs:
   tests:
     name: Tests and Coverage
     runs-on: ubuntu-latest
-    needs: [python-format]  # Ждём форматирования перед тестами
+    needs: [python-format]
+    permissions:
+      contents: read
+      pull-requests: write
     
     steps:
       - uses: actions/checkout@v4
@@ -308,8 +311,41 @@ jobs:
             --cov-report=html:reports/coverage \
             --cov-report=xml:reports/coverage.xml \
             --cov-report=term-missing \
-            --html=reports/pytest.html \
-            --self-contained-html
+            --html=reports/pytest-report.html \
+            --self-contained-html | tee coverage_output.txt
+      
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const coverageOutput = fs.readFileSync('coverage_output.txt', 'utf8');
+            
+            // Обрезаем вывод если слишком длинный (лимит GitHub API ~65k символов)
+            const maxLength = 60000;
+            const truncatedOutput = coverageOutput.length > maxLength 
+              ? coverageOutput.slice(0, maxLength) + '\n\n... (truncated)'
+              : coverageOutput;
+            
+            const body = `## Test Results & Coverage Report
+            
+\`\`\`
+${truncatedOutput}
+\`\`\`
+
+---
+**Full reports available in workflow artifacts**
+
+[Download HTML reports](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
       
       - name: Check coverage threshold
         run: |
