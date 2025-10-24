@@ -1,0 +1,46 @@
+[MASTER]
+# Файлы или директории для игнорирования
+ignore=tests,venv,.git,__pycache__
+
+# Использовать несколько процессов для ускорения
+jobs=4
+
+[MESSAGES CONTROL]
+# Отключенные предупреждения
+disable=
+    C0103,  # invalid-name (разрешаем короткие имена переменных)
+    C0114,  # missing-module-docstring (не требуем docstring для каждого модуля)
+    R0903,  # too-few-public-methods (для моделей данных это нормально)
+    W0212,  # protected-access (иногда нужен доступ к protected членам)
+
+[FORMAT]
+# Максимальная длина строки
+max-line-length=88
+
+# Отступы
+indent-string='    '
+
+[BASIC]
+# Хорошие имена переменных
+good-names=i,j,k,ex,_,id,db
+
+[DESIGN]
+# Максимальное количество аргументов функции
+max-args=7
+
+# Максимальное количество локальных переменных
+max-locals=20
+
+# Максимальное количество веток
+max-branches=15
+
+[SIMILARITIES]
+# Минимальное количество строк для обнаружения дубликатов
+min-similarity-lines=5
+
+[REPORTS]
+# Формат вывода отчета
+output-format=colorized
+
+# Показывать полный отчет
+reports=yes

@@ -1,0 +1,21 @@
+flask==3.0.0
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# Инструменты статического анализа
+pylint==3.0.3
+flake8==7.0.0
+black==24.1.1
+mypy==1.8.0
+isort==5.13.2
+bandit==1.7.6
+
+# Дополнительные плагины для flake8
+flake8-docstrings==1.7.0
+flake8-bugbear==24.1.17
+flake8-comprehensions==3.14.0
+pep8-naming==0.13.3
+
+# Для генерации отчетов
+coverage==7.4.0
+pytest-html==4.1.1

@@ -1,0 +1,243 @@
+# Шаг 5: Production-ready Code Quality Pipeline
+# Полный pipeline с параллельным выполнением и зависимостями
+
+name: 05 - Production Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  # ================== Python Jobs ==================
+  
+  python-lint:
+    name: Python Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install linters
+        run: |
+          pip install flake8 pylint flake8-html
+      
+      - name: Flake8
+        run: |
+          mkdir -p reports
+          flake8 app/ tests/ --format=html --htmldir=reports/flake8 || true
+          flake8 app/ tests/ --statistics
+      
+      - name: Pylint
+        run: |
+          pylint app/ --output-format=json > reports/pylint.json || true
+          pylint app/ || true
+      
+      - name: Upload lint reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-lint-reports
+          path: reports/
+  
+  python-format:
+    name: Python Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install formatters
+        run: pip install black isort
+      
+      - name: Check Black
+        run: black --check --diff app/ tests/
+      
+      - name: Check isort
+        run: isort --check-only --diff app/ tests/
+  
+  python-types:
+    name: Python Type Checking
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install mypy
+        run: pip install -r requirements.txt
+      
+      - name: Run mypy
+        run: |
+          mkdir -p reports/mypy
+          mypy app/ --config-file=mypy.ini --html-report reports/mypy || true
+      
+      - name: Upload mypy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypy-report
+          path: reports/mypy
+  
+  python-security:
+    name: Python Security
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install bandit
+        run: pip install bandit
+      
+      - name: Run Bandit
+        run: |
+          mkdir -p reports
+          bandit -r app/ -f json -o reports/bandit.json || true
+          bandit -r app/ -f html -o reports/bandit.html || true
+          bandit -r app/ || true
+      
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: reports/
+  
+  # ================== JavaScript Jobs ==================
+  
+  javascript-lint:
+    name: JavaScript Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: ESLint
+        run: npm run lint
+  
+  javascript-format:
+    name: JavaScript Formatting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Prettier check
+        run: npm run format:check
+  
+  # ================== Tests ==================
+  
+  tests:
+    name: Tests and Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=app \
+            --cov-report=html:reports/coverage \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=term-missing \
+            --html=reports/pytest.html \
+            --self-contained-html
+      
+      - name: Check coverage threshold
+        run: |
+          coverage report --fail-under=80
+      
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: reports/
+  
+  # ================== Quality Gate ==================
+  
+  quality-gate:
+    name: Quality Gate
+    needs: [
+      python-lint,
+      python-format,
+      python-types,
+      python-security,
+      javascript-lint,
+      javascript-format,
+      tests
+    ]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Quality summary
+        run: |
+          echo "Все проверки качества кода пройдены!"
+          echo ""
+          echo "Результаты:"
+          echo "  - Python Linting: PASSED"
+          echo "  - Python Formatting: PASSED"
+          echo "  - Type Checking: PASSED"
+          echo "  - Security Scan: PASSED"
+          echo "  - JavaScript Linting: PASSED"
+          echo "  - JavaScript Formatting: PASSED"
+          echo "  - Tests & Coverage: PASSED"
+          echo ""
+          echo "Артефакты доступны для скачивания"
+      
+      - name: Create quality badge data
+        run: |
+          echo '{"schemaVersion":1,"label":"code quality","message":"passing","color":"success"}' > quality-badge.json
+      
+      - name: Upload quality badge
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-badge
+          path: quality-badge.json

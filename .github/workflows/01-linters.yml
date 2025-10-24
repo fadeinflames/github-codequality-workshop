@@ -1,0 +1,63 @@
+# Шаг 1: Базовая интеграция линтеров
+# Демонстрирует подключение Python и JavaScript линтеров
+
+name: 01 - Линтеры
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Python линтинг
+  python-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install flake8 pylint
+      
+      - name: Run Flake8
+        run: |
+          echo "Запуск Flake8..."
+          flake8 app/ tests/ --statistics
+        continue-on-error: true
+      
+      - name: Run Pylint
+        run: |
+          echo "Запуск Pylint..."
+          pylint app/ --rcfile=.pylintrc
+        continue-on-error: true
+  
+  # JavaScript линтинг
+  javascript-lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install dependencies
+        run: |
+          npm install
+      
+      - name: Run ESLint
+        run: |
+          echo "Запуск ESLint..."
+          npm run lint
+        continue-on-error: true
