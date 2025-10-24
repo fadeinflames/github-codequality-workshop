@@ -203,7 +203,7 @@ open reports/bandit.html
 - **INSTRUCTOR_GUIDE.md** - инструкции для преподавателя
 - **CHEATSHEET.md** - шпаргалка по всем инструментам
 
-## 🧑‍🏫 Для преподавателей
+## Для преподавателей
 
 ### Подготовка к вебинару:
 
@@ -223,9 +223,9 @@ open reports/bandit.html
 | 60-75 | Артефакты | 04-artifacts-reports.yml |
 | 75-90 | Production pipeline | 05-production.yml |
 
-## 💡 Best Practices
+## Best Practices
 
-### ✅ DO:
+### DO:
 
 - Используйте все инструменты в комбинации
 - Настройте pre-commit hooks
@@ -233,7 +233,7 @@ open reports/bandit.html
 - Установите пороги качества (coverage, complexity)
 - Автоматизируйте форматирование
 
-### ❌ DON'T:
+### DON'T:
 
 - Не игнорируйте предупреждения линтеров
 - Не коммитьте неотформатированный код
@@ -241,7 +241,7 @@ open reports/bandit.html
 - Не пропускайте type hints
 - Не игнорируйте проблемы безопасности
 
-## 🔗 Полезные ссылки
+## Полезные ссылки
 
 ### Документация инструментов:
 
@@ -258,18 +258,18 @@ open reports/bandit.html
 - [GitHub Actions Documentation](https://docs.github.com/actions)
 - [Artifacts Documentation](https://docs.github.com/actions/guides/storing-workflow-data-as-artifacts)
 
-## 📈 Метрики качества
+## Метрики качества
 
 Проект демонстрирует:
 
-- ✅ 100% type hints coverage
-- ✅ 95%+ test coverage
-- ✅ 0 security issues
-- ✅ PEP 8 compliant
-- ✅ Complexity < 10
-- ✅ Automated formatting
+- 100% type hints coverage
+- 95%+ test coverage
+- 0 security issues
+- PEP 8 compliant
+- Complexity < 10
+- Automated formatting
 
-## 🤝 Contributing
+## Contributing
 
 При добавлении кода:
 
@@ -279,10 +279,10 @@ open reports/bandit.html
 4. Проверьте coverage
 5. Создайте PR
 
-## 📄 License
+## License
 
 MIT License - используйте свободно для обучения!
 
 ---
 
-**Создано для воркшопа по DevOps** 🚀
+**Создано для воркшопа по DevOps**
