@@ -1,0 +1,160 @@
+# Шаг 4: Работа с артефактами и отчетами
+# Демонстрирует создание, сохранение и использование артефактов
+
+name: 04 - Артефакты и отчеты
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # Генерация отчетов о качестве кода
+  code-quality-reports:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install all tools
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Create reports directory
+        run: mkdir -p reports
+      
+      - name: Run Flake8 with HTML output
+        run: |
+          pip install flake8-html
+          flake8 app/ tests/ --format=html --htmldir=reports/flake8 || true
+      
+      - name: Run Pylint with JSON output
+        run: |
+          pylint app/ --output-format=json > reports/pylint.json || true
+          pylint app/ --output-format=text > reports/pylint.txt || true
+      
+      - name: Run mypy
+        run: |
+          mypy app/ --config-file=mypy.ini --html-report reports/mypy || true
+      
+      - name: Run Bandit
+        run: |
+          bandit -r app/ -f json -o reports/bandit.json || true
+          bandit -r app/ -f html -o reports/bandit.html || true
+      
+      - name: Upload code quality reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-reports
+          path: reports/
+          retention-days: 30
+  
+  # Тестирование и coverage
+  test-coverage:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=app \
+            --cov-report=html:reports/coverage \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=term \
+            --html=reports/pytest-report.html \
+            --self-contained-html
+      
+      - name: Coverage badge
+        run: |
+          coverage report | tee reports/coverage-summary.txt
+      
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: reports/
+          retention-days: 30
+      
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const coverage = fs.readFileSync('reports/coverage-summary.txt', 'utf8');
+            const body = `## 📊 Coverage Report\n\n\`\`\`\n${coverage}\n\`\`\``;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+  
+  # Объединение всех артефактов
+  combine-reports:
+    needs: [code-quality-reports, test-coverage]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: List downloaded artifacts
+        run: |
+          echo "📦 Скачанные артефакты:"
+          ls -R
+      
+      - name: Create summary report
+        run: |
+          cat > reports-summary.md << 'EOF'
+          # 📊 Отчеты о качестве кода
+          
+          ## Доступные отчеты:
+          
+          ### Code Quality
+          - 🔍 Flake8: Проверка стиля кода
+          - 📋 Pylint: Статический анализ
+          - 🔒 Bandit: Проверка безопасности
+          - 🎯 mypy: Проверка типов
+          
+          ### Testing
+          - ✅ Pytest: Результаты тестов
+          - 📈 Coverage: Покрытие кода тестами
+          
+          Все отчеты доступны в артефактах этого workflow run.
+          EOF
+          cat reports-summary.md
+      
+      - name: Upload combined summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-summary
+          path: reports-summary.md
+          retention-days: 30

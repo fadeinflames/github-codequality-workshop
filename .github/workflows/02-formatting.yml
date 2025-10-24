@@ -1,0 +1,74 @@
+# Шаг 2: Автоматическое форматирование кода
+# Демонстрирует использование Black, isort и Prettier
+
+name: 02 - Форматирование
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Python форматирование
+  python-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install formatters
+        run: |
+          pip install black isort
+      
+      - name: Check formatting with Black
+        run: |
+          echo "🎨 Проверка форматирования с Black..."
+          black --check --diff app/ tests/
+      
+      - name: Check import sorting with isort
+        run: |
+          echo "📦 Проверка импортов с isort..."
+          isort --check-only --diff app/ tests/
+      
+      - name: Auto-format (на ветках feature)
+        if: github.ref != 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          echo "🔧 Автоматическое форматирование..."
+          black app/ tests/
+          isort app/ tests/
+  
+  # JavaScript форматирование
+  javascript-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Check formatting with Prettier
+        run: |
+          echo "🎨 Проверка форматирования с Prettier..."
+          npm run format:check
+      
+      - name: Show formatting differences
+        if: failure()
+        run: |
+          echo "❌ Найдены проблемы с форматированием!"
+          echo "Запустите: npm run format"

@@ -1,0 +1,27 @@
+{
+  "name": "code-quality-workshop",
+  "version": "1.0.0",
+  "description": "Workshop on code quality and static analysis",
+  "main": "frontend/user-client.js",
+  "scripts": {
+    "lint": "eslint frontend/**/*.js",
+    "lint:fix": "eslint frontend/**/*.js --fix",
+    "format": "prettier --write frontend/**/*.js",
+    "format:check": "prettier --check frontend/**/*.js"
+  },
+  "keywords": [
+    "code-quality",
+    "static-analysis",
+    "workshop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsdoc": "^48.0.2",
+    "prettier": "^3.2.4"
+  }
+}

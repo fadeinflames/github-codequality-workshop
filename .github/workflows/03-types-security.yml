@@ -1,0 +1,78 @@
+# Шаг 3: Проверка типов и безопасности
+# Демонстрирует использование mypy и bandit
+
+name: 03 - Типы и безопасность
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  type-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Type checking with mypy
+        run: |
+          echo "🔍 Проверка типов с mypy..."
+          mypy app/ --config-file=mypy.ini
+        continue-on-error: true
+      
+      - name: Generate mypy report
+        if: always()
+        run: |
+          mypy app/ --config-file=mypy.ini --html-report reports/mypy || true
+      
+      - name: Upload mypy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypy-report
+          path: reports/mypy
+          retention-days: 30
+  
+  security-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install bandit
+        run: pip install bandit
+      
+      - name: Security check with Bandit
+        run: |
+          echo "🔒 Проверка безопасности с Bandit..."
+          bandit -r app/ -f json -o reports/bandit.json || true
+          bandit -r app/ -f txt
+        continue-on-error: true
+      
+      - name: Upload bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report
+          path: reports/bandit.json
+          retention-days: 30
