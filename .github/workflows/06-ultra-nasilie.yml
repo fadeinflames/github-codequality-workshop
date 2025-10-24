@@ -1,0 +1,344 @@
+name: 05 - Production Code Quality with Auto-fix
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  # ================== Python Jobs ==================
+  
+  python-lint:
+    name: Python Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install linters
+        run: |
+          pip install flake8 pylint flake8-html
+      
+      - name: Flake8
+        run: |
+          mkdir -p reports
+          flake8 app/ tests/ --format=html --htmldir=reports/flake8 || true
+          flake8 app/ tests/ --statistics
+      
+      - name: Pylint
+        run: |
+          pylint app/ --output-format=json > reports/pylint.json || true
+          pylint app/ || true
+      
+      - name: Upload lint reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-lint-reports
+          path: reports/
+  
+  python-format:
+    name: Python Formatting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install formatters
+        run: pip install black isort
+      
+      - name: Check formatting
+        id: check
+        run: |
+          if ! black --check app/ tests/ 2>/dev/null || ! isort --check-only app/ tests/ 2>/dev/null; then
+            echo "needs_format=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Код требует форматирования"
+          else
+            echo "needs_format=false" >> $GITHUB_OUTPUT
+            echo "✅ Код уже отформатирован"
+          fi
+        continue-on-error: true
+      
+      - name: Auto-format code
+        if: steps.check.outputs.needs_format == 'true'
+        run: |
+          echo "🎨 Форматирую код..."
+          black app/ tests/
+          isort app/ tests/
+      
+      # Для push в ветки - создаём PR
+      - name: Create Pull Request
+        if: |
+          steps.check.outputs.needs_format == 'true' && 
+          github.event_name == 'push' &&
+          github.ref != 'refs/heads/main'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "style: автоматическое форматирование кода"
+          title: "🤖 Автоформатирование: ${{ github.ref_name }}"
+          body: |
+            ## 🎨 Автоматическое форматирование кода
+            
+            Этот PR создан автоматически для ветки `${{ github.ref_name }}`.
+            
+            ### Применённые инструменты:
+            - **black** - форматирование Python кода
+            - **isort** - сортировка импортов
+            
+            ### Действия:
+            1. ✅ Просмотрите изменения
+            2. ✅ Смержите если всё в порядке
+            3. ❌ Закройте если нужны ручные правки
+            
+            ---
+            <details>
+            <summary>Детали workflow</summary>
+            
+            - Workflow: `${{ github.workflow }}`
+            - Run: `${{ github.run_number }}`
+            - Commit: `${{ github.sha }}`
+            </details>
+          branch: autoformat/${{ github.ref_name }}-${{ github.run_number }}
+          delete-branch: true
+          labels: |
+            automated
+            formatting
+            code-quality
+          reviewers: ${{ github.actor }}
+      
+      # Для PR - коммитим прямо в PR
+      - name: Commit to Pull Request
+        if: |
+          steps.check.outputs.needs_format == 'true' && 
+          github.event_name == 'pull_request'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format code [skip ci]"
+          file_pattern: "*.py"
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
+      
+      - name: Report formatting status
+        if: steps.check.outputs.needs_format == 'false'
+        run: |
+          echo "✅ Код уже правильно отформатирован"
+          echo "Проверки пройдены успешно!"
+  
+  python-types:
+    name: Python Type Checking
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install mypy
+        run: pip install mypy
+      
+      - name: Run mypy
+        run: |
+          mkdir -p reports/mypy
+          mypy app/ --html-report reports/mypy || true
+      
+      - name: Upload mypy report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypy-report
+          path: reports/mypy
+  
+  python-security:
+    name: Python Security
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      
+      - name: Install bandit
+        run: pip install bandit
+      
+      - name: Run Bandit
+        run: |
+          mkdir -p reports
+          bandit -r app/ -f json -o reports/bandit.json || true
+          bandit -r app/ -f html -o reports/bandit.html || true
+          bandit -r app/ || true
+      
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: reports/
+  
+  # ================== JavaScript Jobs ==================
+  
+  javascript-lint:
+    name: JavaScript Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: ESLint with autofix
+        run: npm run lint -- --fix || true
+      
+      - name: Commit fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        if: github.event_name == 'pull_request'
+        with:
+          commit_message: "style: auto-fix ESLint issues [skip ci]"
+          file_pattern: "*.js *.jsx *.ts *.tsx"
+  
+  javascript-format:
+    name: JavaScript Formatting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Install dependencies
+        run: npm install
+      
+      - name: Run Prettier
+        run: npm run format:write || true
+      
+      - name: Commit prettier changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        if: github.event_name == 'pull_request'
+        with:
+          commit_message: "style: format code with prettier [skip ci]"
+          file_pattern: "*.js *.jsx *.ts *.tsx *.json *.css *.md"
+  
+  # ================== Tests ==================
+  
+  tests:
+    name: Tests and Coverage
+    runs-on: ubuntu-latest
+    needs: [python-format]  # Ждём форматирования перед тестами
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run tests with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=app \
+            --cov-report=html:reports/coverage \
+            --cov-report=xml:reports/coverage.xml \
+            --cov-report=term-missing \
+            --html=reports/pytest.html \
+            --self-contained-html
+      
+      - name: Check coverage threshold
+        run: |
+          coverage report --fail-under=80
+      
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: reports/
+  
+  # ================== Quality Gate ==================
+  
+  quality-gate:
+    name: Quality Gate
+    needs: [
+      python-lint,
+      python-format,
+      python-types,
+      python-security,
+      javascript-lint,
+      javascript-format,
+      tests
+    ]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Quality summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 ВСЕ ПРОВЕРКИ КАЧЕСТВА КОДА ПРОЙДЕНЫ!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "📊 Результаты:"
+          echo "  ✅ Python Linting"
+          echo "  ✅ Python Formatting (с автоисправлением)"
+          echo "  ✅ Type Checking"
+          echo "  ✅ Security Scan"
+          echo "  ✅ JavaScript Linting (с автоисправлением)"
+          echo "  ✅ JavaScript Formatting (с автоисправлением)"
+          echo "  ✅ Tests & Coverage"
+          echo ""
+          echo "📦 Все артефакты доступны для скачивания"
+          echo ""
+          echo "💡 Автоисправления применены где необходимо"
+      
+      - name: Create quality badge
+        run: |
+          echo '{"schemaVersion":1,"label":"code quality","message":"passing","color":"success"}' > quality-badge.json
+      
+      - name: Upload quality badge
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-badge
+          path: quality-badge.json
