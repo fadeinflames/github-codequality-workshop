@@ -1,4 +1,4 @@
-name: 05 - Production Code Quality with Auto-fix
+name: 06 - Production Code Quality with Auto-fix
 
 on:
   push:
@@ -243,10 +243,26 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f package.json ]; then
+            npm install
+          else
+            echo "⚠️ package.json не найден, пропускаем"
+            exit 0
+          fi
+      
+      - name: Install Prettier if not present
+        run: npm install --save-dev prettier || true
       
       - name: Run Prettier
-        run: npm run format:write || true
+        run: |
+          if npm run format:write --silent 2>/dev/null; then
+            echo "✅ Используем npm скрипт format:write"
+          else
+            echo "🔧 Запускаю Prettier напрямую..."
+            npx prettier --write "**/*.{js,jsx,ts,tsx,json,css,md}" || true
+          fi
+        continue-on-error: true
       
       - name: Commit prettier changes
         uses: stefanzweifel/git-auto-commit-action@v5
