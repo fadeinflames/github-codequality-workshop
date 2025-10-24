@@ -4,8 +4,6 @@
 import pytest
 import json
 import re
-from app.api import app
-
 
 @pytest.fixture
 def client():
