@@ -1,77 +1,48 @@
-# Шаг 2: Автоматическое форматирование кода
-# Демонстрирует использование Black, isort и Prettier
-
-name: 02 - Форматирование
+name: Coverage Report
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+  push:
+    branches: [main]
+
+# 🔑 Добавьте permissions для GITHUB_TOKEN
+permissions:
+  contents: read
+  issues: write           # Для комментариев к issues
+  pull-requests: write    # Для комментариев к PR
 
 jobs:
-  # Python форматирование
-  python-format:
+  coverage:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
-      
-      - name: Install formatters
-        run: |
-          pip install black isort
-      
-      - name: Check formatting with Black
-        run: |
-          echo "🎨 Проверка форматирования с Black..."
-          black --check --diff app/ tests/
-      
-      - name: Check import sorting with isort
-        run: |
-          echo "📦 Проверка импортов с isort..."
-          isort --check-only --diff app/ tests/
-      
-      - name: Auto-format (на ветках feature)
-        if: github.ref != 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          echo "🔧 Автоматическое форматирование..."
-          black app/ tests/
-          isort app/ tests/
-  
-  # JavaScript форматирование
-  javascript-format:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          #cache: 'npm'
       
       - name: Install dependencies
-        run: npm install
-      
-      - name: Check formatting with Prettier
         run: |
-          echo "🎨 Проверка форматирования с Prettier..."
-          npm run format:check
+          pip install pytest pytest-cov
+          pip install -r requirements.txt
       
-      - name: Show formatting differences
-        if: failure()
+      - name: Run tests with coverage
         run: |
-          echo "::error title=Форматирование кода::Найдены проблемы с форматированием кода"
-          echo "::warning::Для исправления выполните: npm run format"
-          echo ""
-          echo "Файлы с проблемами:"
-          npx prettier --check "**/*.{js,jsx,ts,tsx,json,css,md}" || true
+          pytest --cov=app --cov-report=term-missing > coverage.txt
+          cat coverage.txt
+      
+      - name: Comment coverage report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const coverage = fs.readFileSync('coverage.txt', 'utf8');
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 Coverage Report\n\n\`\`\`\n${coverage}\n\`\`\``
+            });
