@@ -136,7 +136,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "style: auto-format code [skip ci]"
-          file_pattern: "*.py"
+          file_pattern: "**/*.py"
           add_options: '-A'
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
@@ -228,7 +228,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           commit_message: "style: auto-fix ESLint issues [skip ci]"
-          file_pattern: "*.js *.jsx *.ts *.tsx"
+          file_pattern: "**/*.{js,jsx,ts,tsx}"
           add_options: '-A'
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
@@ -276,7 +276,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           commit_message: "style: format code with prettier [skip ci]"
-          file_pattern: "*.js *.jsx *.ts *.tsx *.json *.css *.md"
+          file_pattern: "**/*.{js,jsx,ts,tsx,json,css,md}"
           add_options: '-A'
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
